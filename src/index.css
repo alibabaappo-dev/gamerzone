@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary-color: #eab308; /* Default yellow-500 */
+  }
+  body {
+    @apply bg-[#0D1117] text-white font-sans;
+  }
+}
+
+@layer utilities {
+  .bg-yellow-500 { background-color: var(--primary-color) !important; }
+  .text-yellow-500 { color: var(--primary-color) !important; }
+  .border-yellow-500 { border-color: var(--primary-color) !important; }
+  .hover\:bg-yellow-500:hover { background-color: var(--primary-color) !important; }
+  .from-yellow-500 { --tw-gradient-from: var(--primary-color) !important; }
+  .to-yellow-500 { --tw-gradient-to: var(--primary-color) !important; }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #111827;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #4B5563;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

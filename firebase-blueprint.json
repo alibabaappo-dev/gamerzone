@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and account information",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "password": { "type": "string", "description": "Hashed password" },
+        "isAdmin": { "type": "boolean" },
+        "isOwner": { "type": "boolean" },
+        "walletBalance": { "type": "number" },
+        "fcmTokens": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "referralCode": { "type": "string" },
+        "isBanned": { "type": "boolean" },
+        "banReason": { "type": "string" }
+      },
+      "required": ["username", "email", "password"]
+    },
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Tournament details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "creatorId", "status"]
+    },
+    "Participant": {
+      "title": "Participant",
+      "description": "User participation in a tournament",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "userId": { "type": "string" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "userId"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Tournament match details",
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "round": { "type": "integer" },
+        "matchNumber": { "type": "integer" },
+        "participant1Id": { "type": "string" },
+        "participant2Id": { "type": "string" },
+        "winnerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "round", "matchNumber"]
+    },
+    "AppSetting": {
+      "title": "AppSetting",
+      "description": "Global application settings",
+      "type": "object",
+      "properties": {
+        "maintenanceMode": { "type": "boolean" },
+        "maintenanceMessage": { "type": "string" },
+        "primaryColor": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "tournaments/{tournamentId}": {
+      "schema": "Tournament",
+      "description": "Tournaments"
+    },
+    "participants/{participantId}": {
+      "schema": "Participant",
+      "description": "Tournament participants"
+    },
+    "matches/{matchId}": {
+      "schema": "Match",
+      "description": "Tournament matches"
+    },
+    "settings/app": {
+      "schema": "AppSetting",
+      "description": "App settings"
+    }
+  }
+}

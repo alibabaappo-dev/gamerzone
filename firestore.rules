@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - username: string (required)
+    //   - email: string (required, email format)
+    //   - password: string (required, hashed)
+    //   - isAdmin: boolean (optional)
+    //   - isOwner: boolean (optional)
+    //   - walletBalance: number (optional)
+    //   - fcmTokens: list (optional, strings)
+    //   - createdAt: timestamp (optional)
+    //   - referralCode: string (optional)
+    //   - isBanned: boolean (optional)
+    //   - banReason: string (optional)
+    //
+    // Collection: tournaments
+    // Document ID: tournamentId
+    // Fields:
+    //   - name: string (required)
+    //   - description: string (optional)
+    //   - creatorId: string (required, UID)
+    //   - status: string (required, enum: ['pending', 'active', 'completed'])
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: participants
+    // Document ID: participantId
+    // Fields:
+    //   - tournamentId: string (required)
+    //   - userId: string (required, UID)
+    //   - joinedAt: timestamp (optional)
+    //
+    // Collection: matches
+    // Document ID: matchId
+    // Fields:
+    //   - tournamentId: string (required)
+    //   - round: integer (required)
+    //   - matchNumber: integer (required)
+    //   - participant1Id: string (optional, UID)
+    //   - participant2Id: string (optional, UID)
+    //   - winnerId: string (optional, UID)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: settings
+    // Document ID: app
+    // Fields:
+    //   - maintenanceMode: boolean (optional)
+    //   - maintenanceMessage: string (optional)
+    //   - primaryColor: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true ||
+         request.auth.token.email == "alibabaappo@gmail.com");
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.username is string && data.username.size() > 0 && data.username.size() < 50 &&
+               data.email is string && isValidEmail(data.email) &&
+               (data.fcmTokens == null || data.fcmTokens is list);
+      }
+
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.isAdmin == false && request.resource.data.isOwner == false;
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && 
+                      (isAdmin() || (request.resource.data.isAdmin == resource.data.isAdmin && 
+                                     request.resource.data.isOwner == resource.data.isOwner));
+    }
+
+    match /tournaments/{tournamentId} {
+      function isValidTournament(data) {
+        return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+               data.status in ['pending', 'active', 'completed'];
+      }
+
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidTournament(request.resource.data) && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.creatorId == request.auth.uid || isAdmin()) && isValidTournament(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.creatorId == request.auth.uid || isAdmin());
+    }
+
+    match /participants/{participantId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isAuthenticated() && get(/databases/$(database)/documents/tournaments/$(request.resource.data.tournamentId)).data.creatorId == request.auth.uid);
+    }
+
+    match /settings/app {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /password_resets/{email} {
+      allow read, write: if true; // Temporary for reset flow, should be hardened
+    }
+    
+    match /email_verifications/{email} {
+      allow read, write: if true; // Temporary for verification flow, should be hardened
+    }
+  }
+}
