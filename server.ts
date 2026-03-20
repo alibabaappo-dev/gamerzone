@@ -37,13 +37,14 @@ declare global {
 }
 
 const app = express();
+const router = express.Router();
 const PORT = 3000;
 
 app.use(express.json());
 app.use(cookieParser());
 
-// Push Notification Route
-app.post('/api/send-push', async (req, res) => {
+// Define all routes on the router
+router.post('/send-push', async (req, res) => {
     try {
       const { title, body, target, userId } = req.body;
       
@@ -223,8 +224,12 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  // Auth routes
-  app.post('/api/register', async (req, res) => {
+  // Mount the router
+app.use('/api', router);
+app.use('/', router);
+
+// Auth routes
+router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required' });
@@ -259,7 +264,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.post('/api/login', async (req, res) => {
+  router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
@@ -292,11 +297,11 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.post('/api/logout', (req, res) => {
+  router.post('/logout', (req, res) => {
     res.clearCookie('token').json({ message: 'Logged out successfully' });
   });
 
-  app.get('/api/me', (req, res) => {
+  router.get('/me', (req, res) => {
     const token = req.cookies.token;
     if (!token) {
       return res.status(401).json({ message: 'Not authenticated' });
@@ -325,7 +330,7 @@ app.post('/api/send-push', async (req, res) => {
   };
 
   // Tournament routes
-  app.post('/api/tournaments', authenticate, async (req, res) => {
+  router.post('/tournaments', authenticate, async (req, res) => {
     const { name, description } = req.body;
     const creatorId = req.user.id;
 
@@ -349,7 +354,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/tournaments', async (req, res) => {
+  router.get('/tournaments', async (req, res) => {
     try {
       const tournamentsSnap = await admin.firestore().collection('tournaments').get();
       const tournaments = tournamentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -360,7 +365,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/tournaments/:id/participants', async (req, res) => {
+  router.get('/tournaments/:id/participants', async (req, res) => {
     try {
       const participantsSnap = await admin.firestore().collection('participants')
         .where('tournamentId', '==', req.params.id)
@@ -385,7 +390,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/tournaments/:id/matches', async (req, res) => {
+  router.get('/tournaments/:id/matches', async (req, res) => {
     try {
       const matchesSnap = await admin.firestore().collection('matches')
         .where('tournamentId', '==', req.params.id)
@@ -398,7 +403,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/tournaments/:id', async (req, res) => {
+  router.get('/tournaments/:id', async (req, res) => {
     try {
       const tournamentDoc = await admin.firestore().collection('tournaments').doc(req.params.id).get();
       if (!tournamentDoc.exists) {
@@ -437,7 +442,7 @@ app.post('/api/send-push', async (req, res) => {
     return res.status(403).json({ message: 'Forbidden' });
   };
 
-  app.get('/api/admin/users', authenticate, adminOnly, async (req, res) => {
+  router.get('/admin/users', authenticate, adminOnly, async (req, res) => {
     try {
       const usersSnap = await admin.firestore().collection('users').get();
       const users = usersSnap.docs.map(doc => ({ id: doc.id, username: doc.data().username, isAdmin: doc.data().isAdmin }));
@@ -448,7 +453,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/admin/tournaments', authenticate, adminOnly, async (req, res) => {
+  router.get('/admin/tournaments', authenticate, adminOnly, async (req, res) => {
     try {
       const tournamentsSnap = await admin.firestore().collection('tournaments').get();
       const tournaments = tournamentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -459,7 +464,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.post('/api/tournaments/:id/join', authenticate, async (req, res) => {
+  router.post('/tournaments/:id/join', authenticate, async (req, res) => {
     const tournamentId = req.params.id;
     const userId = req.user.id;
 
@@ -482,7 +487,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.post('/api/tournaments/:id/leave', authenticate, async (req, res) => {
+  router.post('/tournaments/:id/leave', authenticate, async (req, res) => {
     const tournamentId = req.params.id;
     const userId = req.user.id;
 
@@ -506,7 +511,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.post('/api/tournaments/:id/start', authenticate, async (req, res) => {
+  router.post('/tournaments/:id/start', authenticate, async (req, res) => {
     const tournamentId = req.params.id;
     
     try {
@@ -558,7 +563,7 @@ app.post('/api/send-push', async (req, res) => {
     }
   });
 
-  app.get('/api/stats', authenticate, async (req, res) => {
+  router.get('/stats', authenticate, async (req, res) => {
     const userId = req.user.id;
     try {
       const matchesSnap = await admin.firestore().collection('matches')
@@ -589,7 +594,7 @@ app.post('/api/send-push', async (req, res) => {
   });
 
   // Forgot Password - Send 4-digit code
-  app.post('/api/auth/forgot-password', async (req, res) => {
+  router.post('/auth/forgot-password', async (req, res) => {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -669,7 +674,7 @@ app.post('/api/send-push', async (req, res) => {
   });
 
   // Verify Reset Code
-  app.post('/api/auth/verify-code', async (req, res) => {
+  router.post('/auth/verify-code', async (req, res) => {
     const { email, code } = req.body;
     if (!email || !code) {
       return res.status(400).json({ error: 'Email and code are required' });
@@ -698,7 +703,7 @@ app.post('/api/send-push', async (req, res) => {
   });
 
   // Send Verification OTP
-  app.post('/api/auth/send-verification-otp', async (req, res) => {
+  router.post('/auth/send-verification-otp', async (req, res) => {
     const { email } = req.body;
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -774,7 +779,8 @@ app.post('/api/send-push', async (req, res) => {
   });
 
   // Verify OTP
-  app.post('/api/auth/verify-otp', async (req, res) => {
+  // Verify OTP
+  router.post('/auth/verify-otp', async (req, res) => {
     const { email, code } = req.body;
     if (!email || !code) {
       return res.status(400).json({ error: 'Email and code are required' });
@@ -806,7 +812,7 @@ app.post('/api/send-push', async (req, res) => {
   });
 
   // Reset Password
-  app.post('/api/auth/reset-password', async (req, res) => {
+  router.post('/auth/reset-password', async (req, res) => {
     const { email, code, newPassword } = req.body;
     if (!email || !code || !newPassword) {
       return res.status(400).json({ error: 'Email, code, and new password are required' });
