@@ -5,7 +5,7 @@
 [functions]
   directory = "functions"
   node_bundler = "esbuild"
-  external_node_modules = ["vite", "lightningcss"]
+  external_node_modules = ["lightningcss"]
 
 [[redirects]]
   from = "/api/*"
