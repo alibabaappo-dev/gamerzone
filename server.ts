@@ -22,23 +22,14 @@ if (!admin.apps.length && firebaseConfig.privateKey) {
     admin.initializeApp({
       credential: admin.credential.cert(firebaseConfig),
     });
+    console.log('Firebase Admin initialized');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
 }
 
-// Extend Express Request interface to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
-
 const app = express();
 const router = express.Router();
-const PORT = 3000;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -829,22 +820,12 @@ router.post('/register', async (req, res) => {
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
-    import('vite').then(async ({ createServer: createViteServer }) => {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: 'spa',
-      });
-      app.use(vite.middlewares);
-    });
-  }
-
-  // Start listening if not in Netlify or in development
-  if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  }
+  // Start server only in local development
+if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
+  const PORT = 3000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 export { app };
