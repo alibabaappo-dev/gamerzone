@@ -224,7 +224,7 @@ router.post('/send-push', async (req, res) => {
     }
   });
 
-  // Mount the router
+// Mount the router
 app.use('/api', router);
 app.use('/', router);
 
@@ -734,8 +734,6 @@ router.post('/register', async (req, res) => {
         greetingTimeout: 30000,   // 30 seconds
         socketTimeout: 30000,     // 30 seconds
       };
-      console.log('SMTP Auth User:', process.env.EMAIL_USER ? 'Set' : 'Missing');
-      console.log('SMTP Auth Pass:', process.env.EMAIL_PASS ? 'Set' : 'Missing');
 
       if (process.env.EMAIL_HOST?.includes('gmail')) {
         transporterConfig.service = 'gmail';
@@ -743,14 +741,11 @@ router.post('/register', async (req, res) => {
         transporterConfig.host = process.env.EMAIL_HOST || 'smtp.gmail.com';
         const port = parseInt(process.env.EMAIL_PORT || '465');
         transporterConfig.port = port;
-        // Default secure to true for port 465, false for others unless explicitly set
         transporterConfig.secure = process.env.EMAIL_SECURE === 'true' || (port === 465);
         transporterConfig.tls = { rejectUnauthorized: false };
       }
 
       const transporter = nodemailer.createTransport(transporterConfig);
-      
-      // Verify connection
       await transporter.verify();
 
       const mailOptions = {
@@ -779,7 +774,6 @@ router.post('/register', async (req, res) => {
   });
 
   // Verify OTP
-  // Verify OTP
   router.post('/auth/verify-otp', async (req, res) => {
     const { email, code } = req.body;
     if (!email || !code) {
@@ -801,9 +795,7 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'Verification code has expired' });
       }
 
-      // Mark as verified
       await admin.firestore().collection('email_verifications').doc(email).delete();
-      
       res.json({ success: true, message: 'OTP verified successfully' });
     } catch (error: any) {
       console.error('Verify OTP Error:', error);
@@ -819,21 +811,17 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-      // Re-verify code
       const resetDoc = await admin.firestore().collection('password_resets').doc(email).get();
       if (!resetDoc.exists || resetDoc.data()?.code !== code || Date.now() > resetDoc.data()?.expiresAt) {
         return res.status(400).json({ error: 'Invalid or expired verification session' });
       }
 
-      // Update password in Firebase Auth
       const userRecord = await admin.auth().getUserByEmail(email);
       await admin.auth().updateUser(userRecord.uid, {
         password: newPassword
       });
 
-      // Delete reset record
       await admin.firestore().collection('password_resets').doc(email).delete();
-
       res.json({ success: true, message: 'Password updated successfully' });
     } catch (error: any) {
       console.error('Reset Password Error:', error);
@@ -841,9 +829,7 @@ router.post('/register', async (req, res) => {
     }
   });
 
-  // Other API routes will go here
-
-  // Vite middleware for development - Only load in dev mode
+  // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     import('vite').then(async ({ createServer: createViteServer }) => {
       const vite = await createViteServer({
