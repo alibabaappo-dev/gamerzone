@@ -838,13 +838,15 @@ app.post('/api/send-push', async (req, res) => {
 
   // Other API routes will go here
 
-  // Vite middleware for development
+  // Vite middleware for development - Only load in dev mode
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+    import('vite').then(async ({ createServer: createViteServer }) => {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
     });
-    app.use(vite.middlewares);
   }
 
   // Start listening if not in Netlify or in development
