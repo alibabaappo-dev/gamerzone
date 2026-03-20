@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { createServer as createViteServer } from 'vite';
 import cookieParser from 'cookie-parser';
 import { hashPassword, comparePassword, createToken, verifyToken } from './src/lib/auth';
 import admin from 'firebase-admin';
