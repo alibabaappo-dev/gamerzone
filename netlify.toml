@@ -4,11 +4,12 @@
 
 [functions]
   directory = "functions"
+  node_bundler = "esbuild"
   external_node_modules = ["vite", "lightningcss"]
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 [[redirects]]
